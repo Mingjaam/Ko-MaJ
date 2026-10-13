@@ -29,9 +29,18 @@ def cell(sp, m, atk, dfn, tag, L="200"):
         return None
 
 
+INVALID = []  # cells where the detector also flags unwatermarked text under the same attack (FPR > 20%)
+
+
 def val(sp, m, atk, dfn, tag, k="tpr_elig", L="200"):
     c = cell(sp, m, atk, dfn, tag, L)
-    return None if c is None else round(c[k], 4)
+    if c is None:
+        return None
+    if c.get("fpr_none") is not None and c["fpr_none"] > 0.2:
+        if (sp, m, atk, dfn, tag) not in [tuple(x[:5]) for x in INVALID]:
+            INVALID.append([sp, m, atk, dfn, tag, round(c[k], 3), round(c["fpr_none"], 3)])
+        return None
+    return None if c[k] is None else round(c[k], 4)
 
 
 F = {"models": MODELS, "main": {}, "all": {}, "nelig": {}, "defended": {}, "length": {}, "fpr": {}, "quality": {},
@@ -109,5 +118,6 @@ for f in glob.glob(f"{OUT}/det_rev/human/human-*_hanmark_15485863_any_none.npy")
     z = z[~np.isnan(z)]
     F["null"] = {"n": int(len(z)), "mean": float(z.mean()), "std": float(z.std()), "max": float(z.max()),
                  "gt4": int((z > 4).sum()), "hist": np.histogram(z, bins=np.arange(-4, 4.01, 0.5))[0].tolist()}
+F["invalid"] = INVALID
 json.dump(F, open(f"{OUT}/final2.json", "w"), indent=1)
 print("written final2.json")

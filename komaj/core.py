@@ -94,6 +94,10 @@ def cut_at_syllables(text, n):
             hi = mid
         else:
             lo = mid + 1
+    # A decomposed syllable counts as soon as its vowel appears; keep the trailing final consonant (and any
+    # format characters between) so the n-th canonical syllable is complete: syllables(cut) == syllables(text)[:n].
+    while lo < len(text) and (0x1160 <= ord(text[lo]) <= 0x11FF or unicodedata.category(text[lo]) == "Cf"):
+        lo += 1
     return text[:lo]
 
 

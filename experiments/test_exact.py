@@ -9,6 +9,7 @@ usage: python test_exact.py --tok Qwen/Qwen2.5-7B-Instruct --gen ../out/gen_main
 import argparse
 import json
 import random
+import sys
 
 import numpy as np
 import torch
@@ -21,6 +22,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--tok", required=True)
 ap.add_argument("--gen", required=True)
 ap.add_argument("--n", type=int, default=30)
+ap.add_argument("--min_checked", type=int, default=10000)
 a = ap.parse_args()
 key, gamma = 15485863, 0.25
 tok = AutoTokenizer.from_pretrained(a.tok, trust_remote_code=True)
@@ -48,6 +50,7 @@ def ref_counts(H, S, skip):
 
 
 bad = {True: 0, False: 0}
+bad_h1 = 0
 checked = 0
 for k in range(a.n):
     r = rows[rng.randrange(len(rows))]
@@ -72,4 +75,22 @@ for k in range(a.n):
             if (rn, rg) != (int(n[t]), int(g[t])):
                 bad[skip] += 1
         checked += len(cand)
-print(f"{a.tok}: {checked} (history, token) pairs, mismatches h2={bad[False]} h2R={bad[True]}")
+    # h1 fast path: bias == delta * (green pairs completed by the token) / (pairs completed)
+    logits = torch.zeros(V)
+    out = q1(pre, logits.clone())
+    for t in cand:
+        S = tsyl[t]
+        prev, gg, nn = (H[-1] if H else None), 0, 0
+        for x in S:
+            if prev is not None:
+                gg += u01_int(key, prev, x) < gamma
+                nn += 1
+            prev = x
+        ref = 2.0 * gg / nn if nn else 0.0
+        if abs(float(out[t]) - ref) > 1e-5:
+            bad_h1 += 1
+print(f"{a.tok}: {checked} (history, token) pairs, mismatches h1={bad_h1} h2={bad[False]} h2R={bad[True]}")
+# Scope: candidates are whole precomposed-syllable tokens with an empty UTF-8 buffer and no pending jamo in the
+# stream. Byte-fragment steps use the top-64 slow path and lone conjoining-jamo candidates are not covered.
+if checked < a.min_checked or bad_h1 or bad[False] or bad[True]:
+    sys.exit(1)

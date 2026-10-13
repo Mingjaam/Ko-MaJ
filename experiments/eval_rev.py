@@ -6,10 +6,12 @@ Protocol
 - Reported at that threshold: achieved FPR on held-out human (Clopper-Pearson 95% CI), FPR on the
   unwatermarked model output under the same attack ("none"), and for watermarked output both
   TPR_elig (among texts that reach L canonical syllables) and TPR_all (= detected / all 500 prompts;
-  too-short or missing outputs count as misses), with n_all, n_elig, n_det.
+  too-short or missing outputs count as misses), with n_all, n_elig, n_det. TPR_elig is null when no output
+  reaches the length (e.g. compatibility-jamo text has no Hangul syllables: detection cannot run).
 - Paired bootstrap (2000 resamples of prompts) of TPR_all differences between methods.
 - Quality: oracle PPL (median over prompts, paired per-prompt differences vs none), trigram repetition,
-  Hangul ratio; matched-quality interpolation of attacked TPR at the KGW delta=2 quality cost.
+  Hangul ratio; matched-quality: linear interpolation of the attacked TPR_elig of Ko-MaJ (delta 2..3) at the
+  KGW delta=2 quality cost on the test dPPL axis (an estimate, not a newly generated operating point).
 Writes ../out/rev.json
 """
 import glob
@@ -83,7 +85,7 @@ for f in files:
             elig = ~np.isnan(v)
             det = elig & (np.nan_to_num(v, nan=-1e9) > thr)
             r = {"thr": thr, "n_all": int(len(v)), "n_elig": int(elig.sum()), "n_det": int(det.sum()),
-                 "tpr_elig": float(det.sum() / max(1, elig.sum())), "tpr_all": float(det.mean()),
+                 "tpr_elig": (float(det.sum() / elig.sum()) if elig.sum() else None), "tpr_all": float(det.mean()),
                  "fpr_human_test": float((ht > thr).mean()) if len(ht) else None, "n_human_test": int(len(ht)),
                  "fpr_human_ci": cp(int((ht > thr).sum()), len(ht)),
                  "human_z4": [int((ht > 4).sum()), int(len(ht))]}
@@ -160,7 +162,7 @@ for sp in ["test", "news_test"]:
             Q[t] = q
         R["quality"].setdefault(sp, {})[m] = Q
 
-# ---- matched quality: interpolate Ko-MaJ (h1) attacked TPR_all at KGW d2's quality cost (dppl)
+# ---- matched quality: interpolate Ko-MaJ (h1) attacked TPR_elig at KGW d2's quality cost (dppl)
 R["matched"] = {}
 for m, Q in R["quality"].get("test", {}).items():
     if "kgw_d2" not in Q or "dppl" not in Q["kgw_d2"]:
