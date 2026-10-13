@@ -1,0 +1,8 @@
+[
+ {"tag": "none",       "scheme": "none"},
+ {"tag": "kgw_d2",     "scheme": "kgw",     "key": 15485863, "gamma": 0.25, "delta": 2.0},
+ {"tag": "unigram_d2", "scheme": "unigram", "key": 15485863, "gamma": 0.25, "delta": 2.0},
+ {"tag": "han_d1",     "scheme": "hanmark", "key": 15485863, "gamma": 0.25, "delta": 1.0},
+ {"tag": "han_d2",     "scheme": "hanmark", "key": 15485863, "gamma": 0.25, "delta": 2.0},
+ {"tag": "han_d3",     "scheme": "hanmark", "key": 15485863, "gamma": 0.25, "delta": 3.0}
+]

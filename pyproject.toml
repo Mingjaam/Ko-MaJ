@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "komaj"
+version = "0.1.0"
+description = "Ko-MaJ: Korean Watermarking by Syllable Juxtaposition. A key-only, tokenizer-free watermark for Korean LLM output."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Minjae Kim" }]
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.23"]
+keywords = ["watermark", "llm", "korean", "hangul", "ai-generated-text"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Natural Language :: Korean",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.optional-dependencies]
+hf = ["torch>=2.1", "transformers>=4.43"]
+vllm = ["torch>=2.1", "transformers>=4.43", "vllm>=0.29"]
+dev = ["pytest"]
+
+[project.scripts]
+komaj = "komaj.cli:main"
+
+[project.urls]
+Homepage = "https://mingjaam.github.io/Ko-MaJ/"
+Repository = "https://github.com/Mingjaam/Ko-MaJ"
+
+[tool.setuptools]
+packages = ["komaj"]
