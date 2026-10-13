@@ -231,23 +231,6 @@ def side():
     save(fig, "fig_side.png")
 
 
-def overview_gen():
-    """Version A of Fig. 1: same diagram with image-server icons above each stage."""
-    from matplotlib.offsetbox import AnnotationBbox, OffsetImage
-    overview()
-    import matplotlib.image as mpimg
-    base = mpimg.imread(os.path.join(B, "fig_overview.png"))
-    fig, ax = plt.subplots(figsize=(2.9, 3.25), dpi=400)
-    ax.axis("off"); ax.set_xlim(0, 1); ax.set_ylim(0, 1)
-    ax.imshow(base, extent=(0, 1, 0, 0.84), aspect="auto")
-    icons = os.path.join(os.path.dirname(B), "slides_assets", "icons")
-    for x, n in [(0.17, "translate"), (0.5, "stamp"), (0.83, "key")]:
-        p = os.path.join(icons, n + ".png")
-        if os.path.exists(p):
-            ax.add_artist(AnnotationBbox(OffsetImage(mpimg.imread(p), zoom=0.055), (x, 0.92), frameon=False))
-    save(fig, "fig_overview_gen.png")
-
-
 if __name__ == "__main__":
     overview()
     pareto()
