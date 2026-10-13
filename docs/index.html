@@ -38,7 +38,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: auto; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.7; word-break: keep-all; overflow-wrap: anywhere; }
 a { color: var(--jade); }
@@ -193,16 +193,15 @@ footer a { color: var(--band-ink); }
 pre.bib { background: var(--band-cell); color: var(--band-ink); border: 1px solid var(--band-line); border-radius: 6px; padding: 12px 14px; font-family: var(--f-mono); font-size: 12px; overflow-x: auto; margin: 10px 0 0; max-width: 100%; }
 
 /* ---- page-by-page scrolling: every section is one screen, snapping into place */
-html { scroll-snap-type: y mandatory; }
-@media (max-width: 760px), (max-height: 640px) { html { scroll-snap-type: y proximity; } }
+/* paging is done in script (eased, one page per gesture); no CSS snap, so nothing jumps */
 .band { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; scroll-snap-align: start; }
 .band > .wrap { flex: 1; display: flex; flex-direction: column; width: 100%; }
 .band .hero { flex: 1; }
 main section { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; padding-block: 72px 56px !important; scroll-snap-align: start; }
 footer { scroll-snap-align: end; margin-top: 0 !important; }
 /* reveal: content is visible at rest; entering a page replays a rise-in */
-.on .rv { animation: rise .85s cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--d, 0s); }
-@keyframes rise { from { opacity: 0; transform: translateY(56px) scale(.985); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
+.on .rv { animation: rise 1.25s cubic-bezier(.16, .8, .24, 1) both; animation-delay: calc(.25s + var(--d, 0s)); }
+@keyframes rise { from { opacity: 0; transform: translateY(40px) scale(.99); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
 .on .feat .ic svg * { stroke-dasharray: 100; animation: draw 1.3s ease both; animation-delay: calc(var(--d, 0s) + .35s); }
 @keyframes draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
 .on #chart rect { transform-box: fill-box; transform-origin: 50% 100%; animation: grow .9s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(.35s + var(--i, 0) * 45ms); }
@@ -598,7 +597,7 @@ outs = llm.generate(prompts, sp)        # extra_args가 없는 요청은 워터�
   const pages = [document.querySelector(".band"), ...document.querySelectorAll("main section"), document.querySelector("footer")];
   const names = ["처음", "왜 Ko-MaJ", "데모", "원리", "사용법", "결과", "끝"];
   const sel = ".head > *, .grid3 > *, .demo > *, .how > *, .tabs, .codebox, .params, .res > .panel, .kpi, .limits, .hero > div, footer .wrap > *";
-  pages.forEach(pg => pg.querySelectorAll(sel).forEach((e, i) => { e.classList.add("rv"); e.style.setProperty("--d", (Math.min(i, 8) * 0.09).toFixed(2) + "s"); }));
+  pages.forEach(pg => pg.querySelectorAll(sel).forEach((e, i) => { e.classList.add("rv"); e.style.setProperty("--d", (Math.min(i, 8) * 0.12).toFixed(2) + "s"); }));
   document.querySelectorAll(".feat .ic svg *").forEach(e => e.setAttribute("pathLength", "100"));
   const pager = document.getElementById("pager");
   const dots = pages.map((pg, i) => {
@@ -616,6 +615,73 @@ outs = llm.generate(prompts, sp)        # extra_args가 없는 요청은 워터�
     } else if (!e.isIntersecting) e.target.classList.remove("on");   // replay when the page comes back
   }), { threshold: [0, 0.45, 0.6] });
   pages.forEach(p => io.observe(p));
+})();
+
+// ---- eased paging: one page per wheel / key / swipe, about 1.2 s with ease-in-out
+(function () {
+  if (reduce) return;
+  const pages = [document.querySelector(".band"), ...document.querySelectorAll("main section"), document.querySelector("footer")];
+  const DUR = 1200;
+  let busy = false, wheelAcc = 0, wheelT = 0;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const topOf = el => el.getBoundingClientRect().top + window.scrollY;
+  function current() {   // the page whose top is closest to (but not below) the viewport top
+    const y = window.scrollY + 2; let k = 0;
+    pages.forEach((p, i) => { if (topOf(p) <= y) k = i; });
+    return k;
+  }
+  function animateTo(target, dur = DUR) {
+    const start = window.scrollY, dist = target - start;
+    if (Math.abs(dist) < 2) return;
+    busy = true; const t0 = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - t0) / dur);
+      window.scrollTo(0, start + dist * ease(t));
+      if (t < 1) requestAnimationFrame(step); else setTimeout(() => { busy = false; }, 120);
+    }
+    requestAnimationFrame(step);
+  }
+  function go(dir) {
+    const i = current(), p = pages[i], vh = window.innerHeight;
+    const pTop = topOf(p), pBottom = pTop + p.offsetHeight, y = window.scrollY;
+    // a page taller than the screen scrolls inside itself first
+    if (dir > 0 && pBottom - (y + vh) > 4) { animateTo(Math.min(pBottom - vh, y + vh * 0.8), 750); return; }
+    if (dir < 0 && y - pTop > 4) { animateTo(Math.max(pTop, y - vh * 0.8), 750); return; }
+    const j = Math.max(0, Math.min(pages.length - 1, i + dir));
+    if (j === i) return;
+    const q = pages[j];
+    const target = dir < 0 && q.offsetHeight > vh ? topOf(q) + q.offsetHeight - vh : topOf(q);
+    animateTo(target);
+  }
+  window.addEventListener("wheel", e => {
+    if (e.ctrlKey || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+    const tag = (e.target.closest && e.target.closest("textarea, .mss, .codebox pre, .tw")) || null;
+    if (tag && tag.scrollHeight > tag.clientHeight + 2) return;   // let inner scroll boxes scroll
+    e.preventDefault();
+    if (busy) return;
+    const now = performance.now();
+    if (now - wheelT > 250) wheelAcc = 0;
+    wheelT = now; wheelAcc += e.deltaY;
+    if (Math.abs(wheelAcc) > 40) { go(wheelAcc > 0 ? 1 : -1); wheelAcc = 0; }
+  }, { passive: false });
+  window.addEventListener("keydown", e => {
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName)) return;
+    const down = ["ArrowDown", "PageDown", " "].includes(e.key), up = ["ArrowUp", "PageUp"].includes(e.key);
+    if (!down && !up) return;
+    e.preventDefault(); if (!busy) go(down ? 1 : -1);
+  });
+  let ty = null;
+  window.addEventListener("touchstart", e => { ty = e.touches[0].clientY; }, { passive: true });
+  window.addEventListener("touchend", e => {
+    if (ty === null || busy) return;
+    const dy = ty - e.changedTouches[0].clientY; ty = null;
+    if (Math.abs(dy) > 60 && !(e.target.closest && e.target.closest("textarea, .mss, .codebox"))) go(dy > 0 ? 1 : -1);
+  }, { passive: true });
+  // in-page links (nav, pager, buttons) glide too
+  document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener("click", e => {
+    const t = document.getElementById(a.getAttribute("href").slice(1)); if (!t) return;
+    e.preventDefault(); const pg = t.closest(".band, main section, footer") || t; animateTo(topOf(pg), 1400);
+  }));
 })();
 </script>
 
