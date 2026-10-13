@@ -144,19 +144,6 @@ examples/         HuggingFace 생성 + 검출 예제
 tests/            불변성 테스트
 ```
 
-## 인용
-
-논문은 심사 중입니다. 인용 정보는 게재 후 갱신합니다.
-
-```bibtex
-@misc{komaj2026,
-  title  = {Ko-MaJ: Syllable-Level Watermarking for Korean LLM Outputs Robust to Spacing and Tokenizer Changes},
-  author = {Kim, Minjae},
-  year   = {2026},
-  note   = {https://github.com/Mingjaam/Ko-MaJ}
-}
-```
-
 ## 라이선스
 
 MIT. 비교 기법(SynthID-Text, LUNA, STELA)의 코드는 포함하지 않으며 각 공식 저장소의 라이선스를 따릅니다.

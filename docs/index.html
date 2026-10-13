@@ -191,6 +191,37 @@ footer { margin-top: 80px; background: var(--band); color: var(--band-muted); pa
 footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; }
 footer a { color: var(--band-ink); }
 pre.bib { background: var(--band-cell); color: var(--band-ink); border: 1px solid var(--band-line); border-radius: 6px; padding: 12px 14px; font-family: var(--f-mono); font-size: 12px; overflow-x: auto; margin: 10px 0 0; max-width: 100%; }
+
+/* ---- page-by-page scrolling: every section is one screen, snapping into place */
+html { scroll-snap-type: y mandatory; }
+@media (max-width: 760px), (max-height: 640px) { html { scroll-snap-type: y proximity; } }
+.band { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; scroll-snap-align: start; }
+.band > .wrap { flex: 1; display: flex; flex-direction: column; width: 100%; }
+.band .hero { flex: 1; }
+main section { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; padding-block: 72px 56px !important; scroll-snap-align: start; }
+footer { scroll-snap-align: end; margin-top: 0 !important; }
+/* reveal: content is visible at rest; entering a page replays a rise-in */
+.on .rv { animation: rise .85s cubic-bezier(.2, .7, .2, 1) both; animation-delay: var(--d, 0s); }
+@keyframes rise { from { opacity: 0; transform: translateY(56px) scale(.985); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
+.on .feat .ic svg * { stroke-dasharray: 100; animation: draw 1.3s ease both; animation-delay: calc(var(--d, 0s) + .35s); }
+@keyframes draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.on #chart rect { transform-box: fill-box; transform-origin: 50% 100%; animation: grow .9s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(.35s + var(--i, 0) * 45ms); }
+@keyframes grow { from { transform: scaleY(0); } }
+.on .kpi .v { animation: pop .7s cubic-bezier(.2, .9, .3, 1.2) both; animation-delay: calc(var(--d, 0s) + .25s); }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } }
+.pager { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); display: grid; gap: 10px; z-index: 5; }
+.pager a { width: 10px; height: 10px; border-radius: 6px; border: 1.5px solid var(--muted); display: block; transition: height .35s ease, background .35s ease, border-color .35s ease; position: relative; }
+.pager a.cur { height: 28px; background: var(--jade); border-color: var(--jade); }
+.pager a.dark { border-color: var(--band-muted); }
+.pager a.dark.cur { background: var(--jade-hi); border-color: var(--jade-hi); }
+.pager a span { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: 12px; color: var(--muted); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.pager a:hover span, .pager a:focus-visible span { opacity: 1; }
+@media (max-width: 760px) { .pager { display: none; } }
+.hint { position: relative; align-self: center; margin-bottom: 18px; color: var(--band-muted); font-size: 12.5px; text-decoration: none; display: grid; justify-items: center; gap: 2px; animation: bob 2.2s ease-in-out infinite; }
+.hint svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+@keyframes bob { 50% { transform: translateY(7px); } }
+.pgtag { font-family: var(--f-mono); font-size: 12px; color: var(--jade); letter-spacing: .1em; }
+@media (prefers-reduced-motion: reduce) { html { scroll-snap-type: none; } .on .rv, .on .feat .ic svg *, .on #chart rect, .on .kpi .v, .hint { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -228,8 +259,10 @@ pre.bib { background: var(--band-cell); color: var(--band-ink); border: 1px soli
         <p class="cap" id="stageCap">실험에서 EXAONE-3.5-7.8B가 Ko-MaJ(δ=3)로 쓴 문장입니다. 칸 왼쪽 막대는 앞 음절과 이루는 쌍의 색이고, 초록 쌍이 우연(25%)보다 많을수록 z가 큽니다. 아래 칩은 Qwen2.5 토크나이저의 분할입니다.</p>
       </div>
     </header>
+    <a class="hint" href="#features" aria-label="다음 페이지로">아래로 넘기기<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
   </div>
 </div>
+<nav class="pager" id="pager" aria-label="페이지"></nav>
 
 <main>
 <section class="wrap" id="features">
@@ -242,7 +275,7 @@ pre.bib { background: var(--band-cell); color: var(--band-ink); border: 1px soli
 </section>
 
 <section class="wrap" id="demo">
-  <div class="head"><span class="eyebrow">Live demo</span><h2>지금 브라우저에서 검사해 보세요</h2><p class="lead">검출은 키만 있으면 되기 때문에 서버 없이 이 페이지 안에서 바로 돌아갑니다. 예시 글은 실험에서 Kanana-1.5-8B가 공개 실험 키로 쓴 출력입니다.</p></div>
+  <div class="head"><span class="eyebrow">Live demo</span><h2>지금 브라우저에서 검사해 보세요</h2><p class="lead">검출은 키만 있으면 되기 때문에 서버 없이 이 페이지 안에서 바로 돌아갑니다. 예시 글은 실험에서 EXAONE-3.5-7.8B가 공개 실험 키(h1, δ=3)로 쓴 출력의 일부입니다.</p></div>
   <div class="demo">
     <div class="panel">
       <div class="chips" role="group" aria-label="예시 글" id="srcChips">
@@ -278,7 +311,7 @@ pre.bib { background: var(--band-cell); color: var(--band-ink); border: 1px soli
         <div><span class="v" id="dg">0%</span><span class="l">초록 비율 (우연 25%)</span></div>
       </div>
       <div class="verdict no" id="verdict" role="status"></div>
-      <p class="note">판정 기준은 z &gt; 4(표준정규분포에서 우연히 나올 확률 약 0.003%)입니다. 키를 한 글자만 바꿔도 워터마크 글의 z가 0 근처로 떨어집니다. 실제로 쓸 때는 공개된 실험 키 대신 자신만의 키를 쓰세요.</p>
+      <p class="note">판정 기준은 z &gt; 4(표준정규분포에서 우연히 나올 확률 약 0.003%)입니다. 키를 한 글자만 바꾸거나 변형을 생성 때와 다르게 고르면(예시 글은 h1) 워터마크 글의 z가 0 근처로 떨어집니다. 실제로 쓸 때는 공개된 실험 키 대신 자신만의 키를 쓰세요.</p>
     </div>
   </div>
 </section>
@@ -331,14 +364,13 @@ pre.bib { background: var(--band-cell); color: var(--band-ink); border: 1px soli
   <div class="wrap">
     <div>
       <div class="logo" style="font-size:18px"><span class="mk" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Ko-MaJ</div>
-      <p style="margin-top:8px">MIT License · 논문 심사 중 · <a href="https://github.com/Mingjaam/Ko-MaJ">github.com/Mingjaam/Ko-MaJ</a> · <a href="https://claude.ai/artifact/P6UsZfciuzeTcCzFfuBZ37">실험 해설 페이지</a></p>
+      <p style="margin-top:8px">MIT License · <a href="https://github.com/Mingjaam/Ko-MaJ">github.com/Mingjaam/Ko-MaJ</a> · <a href="https://claude.ai/artifact/P6UsZfciuzeTcCzFfuBZ37">실험 해설 페이지</a></p>
     </div>
-    <pre class="bib">@misc{komaj2026, title={Ko-MaJ: Syllable-Level Watermarking for Korean LLM Outputs}, author={Kim, Minjae}, year={2026}}</pre>
   </div>
 </footer>
 
 <script>
-const D = {"models":["qwen25_7b","exaone_8b","kanana_8b","qwen38_27b"],"hero":"특히 슬로바키아와 우크라이나 등 인근 지역들과의 관계에서도 독립 의지가 드러나기 시작했다.","tok_orig":["특","히","~FRAG~","~FRAG~","로","바","키","아","와"," 우","크","라","이나"," 등"," 인","근"," 지역","들과","의"," 관","계","에서도","~FRAG~","~FRAG~","립"," 의","지","가","~FRAG~","~FRAG~","러","나","기"," 시작","했다","."],"tok_nospace":["특","히","슬","로","바","키","아","와","우","크","라","이나","등","인","근","지","역","들과","의","관계","에서도","독","립","의","지","가","드","러","나","기","시","작","했다","."],"tokpair_kept":0.36363636363636365,"demo":{"wm":"이와 같은 티저 광고 방식은 소비자의 호기심을 자극하고, 광고 메시지가 완전히 드러나기 전부터 브랜드에 대한 기대감을 형성한다는 점에서 효과적이었다. 이후 텔레비전 광고가 등장하면서 티저 광고 기법은 더욱 다양한 형태로 확대되었다. 예를 들어 영화 예고편은 클라이맥스나 중요한 장면을 마지막에 보여주지 않고 중간중간 맛보기처럼 일부 장면만 공개해 관객의 궁금증을 유발한다. 이러한 기법은 광고뿐 아니라 마케팅 전반에서도 널리 활용되고 있다. 소비자들은 티저 광고를 통해 완성된 메시지를 기대하며, 자연스럽게 해당 브랜드나 제품에 대한 관심을 갖게 된다. 티저 광고의 또 다른 예로는 새로운 신제품 출시를 앞두고 티저 사이트나 SNS에 수수께끼나 단서를 남겨 소비자가 추측하게 만드는 방식이 있다. 이러한 전략은 단순한 알림보다 소비자의 참여와 화제성을","none":"이후 티저 광고는 소비자들에게 궁금증과 기대감을 유발하는 효과적인 마케팅 도구로 자리잡게 되었고, 다양한 산업 분야에서 널리 사용되기 시작했다. 영화, 음악, 기업 제품 출시 등 여러 분야에서 티저 광고는 비밀을 천천히 하나씩 공개하면서 호기심을 자극하는 방식으로 많이 활용된다. 특히 영화나 음반의 개봉이나 발매 전 티저 광고는 숨겨진 정보를 단계적으로 드러내어 대중의 관심과 기대감을 극대화하는 데 큰 역할을 한다. \n\n티저 광고의 성공 여부는 얼마나 창의적으로 호기심을 자극하고, 마지막 공개 단계에서 소비자에게 강한 인상을 줄 수 있느냐에 달려있다. 잘 만들어진 티저 광고는 단순한 정보 전달을 넘어서 브랜드에 대한 긍정적인 이미지와 기대감을 형성하고, 마침내 본편이나 최종 제품이 공개될 때 더 큰 반향을 불러일으킬 수 있다. 이처럼 티저 광","human":"결정적으로 이 미라가 크세르크세스 1세의 딸이 맞다면 이 미라는 대략 2,500년 전에 만들어졌으니 당연히 그 미라를 안치한 목관의 연도도 그 정도 되어야 한다. 그런데 목관의 조각을 채취해 방사성 탄소 연대 측정을 해본 결과 이 목관은 겨우 250년 전에 만들어진 것으로 밝혀졌다. 미국의 고고학자 오스카 화이트 무스카렐라(Oscar White Muscarella)는 처음에 이 페르시아 공주 미라를 보도한 뉴스를 접했을 때 지난 3월에 이런 비슷한 미라 사진을 봤던 것을 떠올렸다. 그 사진을 보여준 사람은 파키스탄에서 미확인 골동품을 판매하는 상인 측의 중개인이었던 아마놀라 리기(Amanollah Riggi)라는 사람이었는데 그는 무스카렐라에게 은밀히 접근해 이 미라 사진을 보여주며 이 미라는 어느 조로아스터교 신자 가문의 소유물인데 파키스탄"},"nospace":{"qwen25_7b":{"han_d3":0.9917,"kgw_d2":0.209,"unigram_d2":0.5758,"synthid":0.0233,"luna":0.0084,"stela":0.4483},"exaone_8b":{"han_d3":0.86,"kgw_d2":0.0503,"unigram_d2":0.11,"synthid":0.008,"luna":0.004,"stela":0.026},"kanana_8b":{"han_d3":0.746,"kgw_d2":0.0361,"unigram_d2":0.0723,"synthid":0.012,"luna":0.016,"stela":0.0321},"qwen38_27b":{"han_d3":0.998,"kgw_d2":0.1736,"unigram_d2":0.3583,"synthid":null,"luna":null,"stela":null}},"kpis":[["75~100%","공백을 모두 지운 뒤 Ko-MaJ 탐지율. 공격 전과 같습니다."],["0~58%","같은 공격 뒤 기존 기법(KGW·Unigram·SynthID·LUNA·STELA) 공식 검출기의 탐지율",true],["1.5%","보정에 쓰지 않은 사람 글 1,500개에서 잰 오탐률 (95% 신뢰구간 0.9~2.2%)"],["0~4%","다른 모델의 토크나이저로 검사했을 때 KGW·Unigram 탐지율. Ko-MaJ는 토크나이저를 쓰지 않아 그대로입니다.",true]],"limits":["의역이나 한→영→한 역번역처럼 음절 자체를 바꾸는 공격에는 모든 기법과 마찬가지로 약합니다(Ko-MaJ 8~64%).","같은 품질 비용으로 맞추면 공격이 없을 때 Qwen3.8을 제외한 모델에서 KGW보다 탐지율이 낮습니다.","글자를 호환 자모(한 → ㅎㅏㄴ)로 풀어 쓰면 음절이 사라져 검출할 수 없습니다.","출력의 한글 비율을 높이는 쪽으로 분포가 바뀌며, 한국어 전용입니다. 해시는 암호학적 위조 저항을 주장하지 않습니다."]};
+const D = {"models":["qwen25_7b","exaone_8b","kanana_8b","qwen38_27b"],"hero":"빛은 점차 강렬해지며 모든 불확실성을 밀어내고 확실한 지식의 영역으로 안내하였다.","tok_orig":["빛","은","~FRAG~","~FRAG~","차"," 강","렬","해","지","며"," 모든"," 불","확","실","성을","~FRAG~","~FRAG~","어","내","고"," 확","실","한"," 지","식","의"," 영","역","으로"," 안","내","하였다","."],"tok_nospace":["빛","은","점","차","강","렬","해","지","며","모","든","불","확","실","성을","밀","어","내","고","확","실","한","지","식","의","영","역","으로","안내","하였다","."],"tokpair_kept":0.3870967741935484,"demo":{"wm":"그의 활동 영역은 날이 갈수록 넓어져, 신라 본토를 넘어 아라비아 반도까지 맞닿았다. 장보고는 쾌속정과 방산을 선두로 하는 강력한 함대를 이끌고 페르시아 만을 떠돌며 동서 교역의 중심을 잡았다. 이러한 네트워크를 통해 그는 비단과 향료뿐 아니라 서역의 각종 고급 보석과 희귀 광물도 한국과 신라 시장에 소개했다. 신라 정부는 이러한 장보고의 공로와 영향력을 인식하여 조세 감면과 특권을 부여했으며, 그를 새로운 귀족 세력으로 인정하였다. 장보고는 단순히 상업적 이익뿐 아니라 이러한 지역 지배와 외교 관계 구축을 통해 한반도 동부 동아시아의 지정학적 판도를 바꾸어놓았다.","none":"이후 티저 광고는 소비자들에게 궁금증과 기대감을 유발하는 효과적인 마케팅 도구로 자리잡게 되었고, 다양한 산업 분야에서 널리 사용되기 시작했다. 영화, 음악, 기업 제품 출시 등 여러 분야에서 티저 광고는 비밀을 천천히 하나씩 공개하면서 호기심을 자극하는 방식으로 많이 활용된다. 특히 영화나 음반의 개봉이나 발매 전 티저 광고는 숨겨진 정보를 단계적으로 드러내어 대중의 관심과 기대감을 극대화하는 데 큰 역할을 한다. \n\n티저 광고의 성공 여부는 얼마나 창의적으로 호기심을 자극하고, 마지막 공개 단계에서 소비자에게 강한 인상을 줄 수 있느냐에 달려있다. 잘 만들어진 티저 광고는 단순한 정보 전달을 넘어서 브랜드에 대한 긍정적인 이미지와 기대감을 형성하고, 마침내 본편이나 최종 제품이 공개될 때 더 큰 반향을 불러일으킬 수 있다. 이처럼 티저 광","human":"결정적으로 이 미라가 크세르크세스 1세의 딸이 맞다면 이 미라는 대략 2,500년 전에 만들어졌으니 당연히 그 미라를 안치한 목관의 연도도 그 정도 되어야 한다. 그런데 목관의 조각을 채취해 방사성 탄소 연대 측정을 해본 결과 이 목관은 겨우 250년 전에 만들어진 것으로 밝혀졌다. 미국의 고고학자 오스카 화이트 무스카렐라(Oscar White Muscarella)는 처음에 이 페르시아 공주 미라를 보도한 뉴스를 접했을 때 지난 3월에 이런 비슷한 미라 사진을 봤던 것을 떠올렸다. 그 사진을 보여준 사람은 파키스탄에서 미확인 골동품을 판매하는 상인 측의 중개인이었던 아마놀라 리기(Amanollah Riggi)라는 사람이었는데 그는 무스카렐라에게 은밀히 접근해 이 미라 사진을 보여주며 이 미라는 어느 조로아스터교 신자 가문의 소유물인데 파키스탄"},"nospace":{"qwen25_7b":{"han_d3":0.9917,"kgw_d2":0.209,"unigram_d2":0.5758,"synthid":0.0233,"luna":0.0084,"stela":0.4483},"exaone_8b":{"han_d3":0.86,"kgw_d2":0.0503,"unigram_d2":0.11,"synthid":0.008,"luna":0.004,"stela":0.026},"kanana_8b":{"han_d3":0.746,"kgw_d2":0.0361,"unigram_d2":0.0723,"synthid":0.012,"luna":0.016,"stela":0.0321},"qwen38_27b":{"han_d3":0.998,"kgw_d2":0.1736,"unigram_d2":0.3583,"synthid":null,"luna":null,"stela":null}},"kpis":[["75~100%","공백을 모두 지운 뒤 Ko-MaJ 탐지율. 공격 전과 같습니다."],["0~58%","같은 공격 뒤 기존 기법(KGW·Unigram·SynthID·LUNA·STELA) 공식 검출기의 탐지율",true],["1.5%","보정에 쓰지 않은 사람 글 1,500개에서 잰 오탐률 (95% 신뢰구간 0.9~2.2%)"],["0~4%","다른 모델의 토크나이저로 검사했을 때 KGW·Unigram 탐지율. Ko-MaJ는 토크나이저를 쓰지 않아 그대로입니다.",true]],"limits":["의역이나 한→영→한 역번역처럼 음절 자체를 바꾸는 공격에는 모든 기법과 마찬가지로 약합니다(Ko-MaJ 8~64%).","같은 품질 비용으로 맞추면 공격이 없을 때 Qwen3.8을 제외한 모델에서 KGW보다 탐지율이 낮습니다.","글자를 호환 자모(한 → ㅎㅏㄴ)로 풀어 쓰면 음절이 사라져 검출할 수 없습니다.","출력의 한글 비율을 높이는 쪽으로 분포가 바뀌며, 한국어 전용입니다. 해시는 암호학적 위조 저항을 주장하지 않습니다."]};
 // ---- exact port of komaj.core.u01_int (SplitMix64-based keyed hash)
 const M64 = (1n << 64n) - 1n;
 function mix(x) { x = (x + 0x9E3779B97F4A7C15n) & M64; x ^= x >> 30n; x = (x * 0xBF58476D1CE4E5B9n) & M64; x ^= x >> 27n; x = (x * 0x94D049BB133111EBn) & M64; x ^= x >> 31n; return x; }
@@ -553,13 +585,37 @@ outs = llm.generate(prompts, sp)        # extra_args가 없는 요청은 워터�
   const models = D.models, gw = (W - L - R) / models.length, bw = Math.min(16, (gw - 18) / METH.length);
   models.forEach((m, gi) => {
     const x0 = L + gi * gw + (gw - bw * METH.length) / 2;
-    METH.forEach(([t, , c], k) => { const v = (D.nospace[m] || {})[t]; if (v == null) return; svg.appendChild(S("rect", { x: x0 + k * bw + 1, y: y(v * 100), width: bw - 2, height: Math.max(1, y(0) - y(v * 100)), fill: css(c), rx: 1.5 })); });
+    METH.forEach(([t, , c], k) => { const v = (D.nospace[m] || {})[t]; if (v == null) return; svg.appendChild(S("rect", { x: x0 + k * bw + 1, y: y(v * 100), width: bw - 2, height: Math.max(1, y(0) - y(v * 100)), fill: css(c), rx: 1.5, style: `--i:${gi * METH.length + k}` })); });
     svg.appendChild(S("text", { x: L + gi * gw + gw / 2, y: H - 16, "text-anchor": "middle" }, SH[m]));
   });
   document.getElementById("chart").appendChild(svg);
   const k = document.getElementById("kpis");
   D.kpis.forEach(([v, l, neg]) => { const c = el("div", { class: "kpi" }); c.appendChild(el("span", { class: "v" + (neg ? " neg" : "") }, v)); c.appendChild(el("span", { class: "l" }, l)); k.appendChild(c); });
   const ul = document.getElementById("limits"); D.limits.forEach(t => ul.appendChild(el("li", {}, t)));
+})();
+// ---- page-by-page reveal + pager
+(function () {
+  const pages = [document.querySelector(".band"), ...document.querySelectorAll("main section"), document.querySelector("footer")];
+  const names = ["처음", "왜 Ko-MaJ", "데모", "원리", "사용법", "결과", "끝"];
+  const sel = ".head > *, .grid3 > *, .demo > *, .how > *, .tabs, .codebox, .params, .res > .panel, .kpi, .limits, .hero > div, footer .wrap > *";
+  pages.forEach(pg => pg.querySelectorAll(sel).forEach((e, i) => { e.classList.add("rv"); e.style.setProperty("--d", (Math.min(i, 8) * 0.09).toFixed(2) + "s"); }));
+  document.querySelectorAll(".feat .ic svg *").forEach(e => e.setAttribute("pathLength", "100"));
+  const pager = document.getElementById("pager");
+  const dots = pages.map((pg, i) => {
+    if (!pg.id) pg.id = i === 0 ? "top-page" : "page-" + i;
+    const a = el("a", { href: "#" + pg.id, "aria-label": names[i] || "" }); a.appendChild(el("span", {}, names[i] || ""));
+    pager.appendChild(a); return a;
+  });
+  pages[0].classList.add("on");
+  if (!("IntersectionObserver" in window)) return;
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    const i = pages.indexOf(e.target);
+    if (e.isIntersecting && e.intersectionRatio > 0.45) {
+      e.target.classList.add("on");
+      dots.forEach((d, k) => { d.classList.toggle("cur", k === i); d.classList.toggle("dark", i === 0 || i === pages.length - 1); });
+    } else if (!e.isIntersecting) e.target.classList.remove("on");   // replay when the page comes back
+  }), { threshold: [0, 0.45, 0.6] });
+  pages.forEach(p => io.observe(p));
 })();
 </script>
 
